@@ -1,0 +1,161 @@
+    <!DOCTYPE html>
+    <html lang="pt-br">
+    <head>
+        <meta charset="UTF-8" />
+        <title>Produtos</title>
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                margin: 40px;
+                background-color: #f4f6f8;
+            }
+            h1 {
+                color: #333;
+            }
+            table {
+                width: 100%;
+                border-collapse: collapse;
+                background: white;
+                box-shadow: 0 0 5px rgba(0,0,0,0.1);
+            }
+            th, td {
+                padding: 12px 15px;
+                border: 1px solid #ddd;
+                text-align: left;
+            }
+            th {
+                background-color: #007bff;
+                color: white;
+            }
+            tr:nth-child(even) {
+                background-color: #f9f9f9;
+            }
+            form {
+                margin-bottom: 30px;
+                background: white;
+                padding: 20px;
+                box-shadow: 0 0 5px rgba(0,0,0,0.1);
+                max-width: 500px;
+            }
+            input, button {
+                padding: 10px;
+                margin-right: 10px;
+                font-size: 1em;
+            }
+            button {
+                cursor: pointer;
+                background-color: #007bff;
+                color: white;
+                border: none;
+            }
+            button:hover {
+                background-color: #0056b3;
+            }
+            #message {
+                margin-top: 10px;
+                color: green;
+            }
+        </style>
+    </head>
+    <body>
+    <h1>Cadastro de Produtos</h1>
+
+    <form id="produtoForm">
+        <input type="text" id="nome" placeholder="Nome do produto" required />
+        <input type="number" step="0.01" id="preco" placeholder="Preço" required />
+        <input type="number" id="quantidade" placeholder="Quantidade" required />
+        <button type="submit">Adicionar Produto</button>
+    </form>
+
+    <div id="message"></div>
+
+    <table id="produtosTable">
+        <thead>
+        <tr>
+            <th>ID</th>
+            <th>Nome</th>
+            <th>Preço</th>
+            <th>Quantidade</th>
+        </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+
+    <script>
+        const apiUrl = 'http://localhost:8080/produtos';
+
+        const form = document.getElementById('produtoForm');
+        const nomeInput = document.getElementById('nome');
+        const precoInput = document.getElementById('preco');
+        const quantidadeInput = document.getElementById('quantidade');
+        const messageDiv = document.getElementById('message');
+        const tbody = document.querySelector('#produtosTable tbody');
+
+        // Função para buscar e mostrar produtos na tabela
+        async function carregarProdutos() {
+            tbody.innerHTML = '';
+            try {
+                const response = await fetch(apiUrl);
+                const produtos = await response.json();
+
+                produtos.forEach(produto => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${produto.id}</td>
+                        <td>${produto.nome}</td>
+                        <td>R$ ${produto.preco.toFixed(2)}</td>
+                        <td>${produto.quantidade}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            } catch (error) {
+                console.error('Erro ao carregar produtos:', error);
+            }
+        }
+
+        // Função para adicionar produto
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const novoProduto = {
+                nome: nomeInput.value,
+                preco: parseFloat(precoInput.value),
+                quantidade: parseInt(quantidadeInput.value, 10)
+            };
+
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(novoProduto)
+                });
+
+                if (response.ok) {
+                    messageDiv.textContent = 'Produto adicionado com sucesso!';
+                    nomeInput.value = '';
+                    precoInput.value = '';
+                    quantidadeInput.value = '';
+                    carregarProdutos();
+                } else {
+                    messageDiv.textContent = 'Erro ao adicionar produto.';
+                    messageDiv.style.color = 'red';
+                }
+            } catch (error) {
+                console.error('Erro:', error);
+                messageDiv.textContent = 'Erro ao adicionar produto.';
+                messageDiv.style.color = 'red';
+            }
+
+            // Limpar mensagem após 3 segundos
+            setTimeout(() => {
+                messageDiv.textContent = '';
+                messageDiv.style.color = 'green';
+            }, 3000);
+        });
+
+        // Carregar produtos ao abrir a página
+        carregarProdutos();
+    </script>
+    </body>
+    </html>
